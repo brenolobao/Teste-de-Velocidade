@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medidor de Velocidade de Internet</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 100%;
+            max-width: 800px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+        .controls label {
+            font-size: 1.1em;
+            color: #555;
+        }
+        .controls select {
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            font-size: 1em;
+            width: 100%;
+            max-width: 200px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+            transition: background-color 0.3s ease;
+            width: 100%;
+            max-width: 250px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        #progress {
+            margin-top: 15px;
+            font-size: 1.1em;
+            color: #666;
+        }
+        #chartContainer {
+            margin-top: 30px;
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+        #resultsSummary {
+            margin-top: 30px;
+            font-size: 1.2em;
+            color: #333;
+        }
+        #resultsSummary p {
+            margin: 8px 0;
+        }
+        #resultsSummary strong {
+            color: #007bff;
+        }
+
+        @media (min-width: 600px) {
+            .controls {
+                flex-direction: row;
+                justify-content: center;
+            }
+        }
+        @media (max-width: 599px) {
+            .container {
+                padding: 20px;
+            }
+            .controls select,
+            button {
+                max-width: none;
+            }
+            #chartContainer {
+                height: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Medidor de Velocidade da Internet</h1>
+
+        <div class="controls">
+            <div>
+                <label for="numCycles">Número de Ciclos de Teste:</label>
+                <select id="numCycles">
+                    <option value="5">5 ciclos</option>
+                    <option value="10" selected>10 ciclos</option>
+                    <option value="20">20 ciclos</option>
+                    <option value="50">50 ciclos</option>
+                    <option value="100">100 ciclos</option>
+                </select>
+            </div>
+        </div>
+
+        <button id="startButton">Iniciar Teste</button>
+        <div id="progress">Progresso: --</div>
+        
+        <div id="chartContainer">
+            <canvas id="speedChart"></canvas>
+        </div>
+
+        <div id="resultsSummary"></div>
+    </div>
+
+    <script>
+        const startButton = document.getElementById('startButton');
+        const numCyclesSelect = document.getElementById('numCycles');
+        const progressDiv = document.getElementById('progress');
+        const resultsSummaryDiv = document.getElementById('resultsSummary');
+        const chartCanvas = document.getElementById('speedChart');
+
+        const fileUrl = 'https://brenolobao.github.io/searchTeste/test.zip';
+        const fileSizeInBytes = 15728640;
+
+        let numCycles = 0;
+        let downloadSpeeds = [];
+        let speedChart;
+        let testStartTime;
+
+        function initializeChart() {
+            if (speedChart) {
+                speedChart.destroy();
+            }
+            speedChart = new Chart(chartCanvas, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Velocidade de Download (Mbps)',
+                        data: [],
+                        borderColor: '#007bff',
+                        backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 3,
+                        pointBackgroundColor: '#007bff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Ciclo de Teste'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Velocidade (Mbps)'
+                            },
+                            beginAtZero: true,
+                            min: 0
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.raw.toFixed(2)} Mbps`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        async function measureSpeed() {
+            try {
+                const startTime = performance.now();
+                const response = await fetch(fileUrl + '?cacheBuster=' + new Date().getTime());
+                
+                if (!response.ok) {
+                    throw new Error(`Erro HTTP: ${response.status} ${response.statusText}`);
+                }
+
+                const blob = await response.blob();
+                const endTime = performance.now();
+
+                const downloadTimeMs = endTime - startTime;
+                
+                const speedBps = (downloadTimeMs > 0) ? (fileSizeInBytes / (downloadTimeMs / 1000)) : (fileSizeInBytes * 1000); 
+                
+                return speedBps;
+            } catch (error) {
+                console.error("Erro ao medir a velocidade:", error);
+                return 0;
+            }
+        }
+
+        async function startTest() {
+            startButton.disabled = true;
+            numCyclesSelect.disabled = true;
+            resultsSummaryDiv.innerHTML = '';
+            
+            numCycles = parseInt(numCyclesSelect.value);
+            downloadSpeeds = [];
+            testStartTime = performance.now();
+
+            progressDiv.textContent = `Progresso: 0/${numCycles} ciclos`;
+            
+            initializeChart();
+
+            for (let i = 0; i < numCycles; i++) {
+                progressDiv.textContent = `Progresso: ${i + 1}/${numCycles} ciclos`;
+                const currentSpeedBps = await measureSpeed();
+                downloadSpeeds.push(currentSpeedBps);
+
+                const speedMbps = (currentSpeedBps * 8) / (1024 * 1024);
+
+                speedChart.data.labels.push(`Ciclo ${i + 1}`);
+                speedChart.data.datasets[0].data.push(speedMbps);
+                speedChart.update();
+            }
+            
+            finalizeTest();
+        }
+
+        function finalizeTest() {
+            const totalTestTimeMs = performance.now() - testStartTime;
+            const totalTestTimeSeconds = (totalTestTimeMs / 1000).toFixed(2);
+
+            startButton.disabled = false;
+            numCyclesSelect.disabled = false;
+            progressDiv.textContent = `Teste concluído em ${totalTestTimeSeconds} segundos.`;
+
+            if (downloadSpeeds.length > 0) {
+                const validSpeeds = downloadSpeeds.filter(speed => speed > 0);
+
+                if (validSpeeds.length > 0) {
+                    const speedsMbps = validSpeeds.map(speedBps => (speedBps * 8) / (1024 * 1024));
+
+                    const bestSpeed = Math.max(...speedsMbps);
+                    const worstSpeed = Math.min(...speedsMbps);
+                    const averageSpeed = speedsMbps.reduce((sum, speed) => sum + speed, 0) / speedsMbps.length;
+
+                    resultsSummaryDiv.innerHTML = `
+                        <h2>Resultados do Download</h2>
+                        <p>Melhor Velocidade: <strong>${bestSpeed.toFixed(2)} Mbps</strong></p>
+                        <p>Pior Velocidade: <strong>${worstSpeed.toFixed(2)} Mbps</strong></p>
+                        <p>Velocidade Média: <strong>${averageSpeed.toFixed(2)} Mbps</strong></p>
+                    `;
+                } else {
+                    resultsSummaryDiv.innerHTML = '<p>Não foi possível obter medições válidas de download durante o teste.</p>';
+                }
+            } else {
+                resultsSummaryDiv.innerHTML = '<p>Nenhuma medição de velocidade de download realizada.</p>';
+            }
+        }
+
+        initializeChart();
+        startButton.addEventListener('click', startTest);
+    </script>
+</body>
+</html>
