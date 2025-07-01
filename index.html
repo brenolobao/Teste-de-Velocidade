@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Medidor de Velocidade de Internet</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -25,42 +27,50 @@
             text-align: center;
             width: 100%;
             max-width: 800px;
+            box-sizing: border-box;
         }
         h1 {
             color: #333;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
         }
         .controls {
             margin-bottom: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 15px;
+            gap: 20px;
+        }
+        .controls div {
+            width: 100%;
+            max-width: 300px;
+            text-align: left;
         }
         .controls label {
             font-size: 1.1em;
             color: #555;
+            display: block;
+            margin-bottom: 8px;
         }
         .controls select {
-            padding: 8px;
+            padding: 10px;
             border-radius: 5px;
             border: 1px solid #ddd;
             font-size: 1em;
             width: 100%;
-            max-width: 200px;
+            box-sizing: border-box;
         }
         button {
             background-color: #007bff;
             color: white;
-            padding: 10px 20px;
+            padding: 12px 25px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            font-size: 16px;
-            margin-top: 20px;
+            font-size: 17px;
+            margin-top: 25px;
             transition: background-color 0.3s ease;
             width: 100%;
-            max-width: 250px;
+            max-width: 280px;
         }
         button:hover {
             background-color: #0056b3;
@@ -70,44 +80,82 @@
             cursor: not-allowed;
         }
         #progress {
-            margin-top: 15px;
-            font-size: 1.1em;
-            color: #666;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            font-size: 1.2em;
+            color: #444;
+            min-height: 1.5em;
         }
-        #chartContainer {
-            margin-top: 30px;
+        #chartContainer, #generalCyclesChartContainer {
+            margin-top: 40px;
             position: relative;
-            height: 300px;
+            height: 350px;
             width: 100%;
         }
+        #chartContainer h2, #generalCyclesChartContainer h2 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 1.3em;
+        }
         #resultsSummary {
-            margin-top: 30px;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
             font-size: 1.2em;
             color: #333;
         }
+        #resultsSummary h2, #resultsSummary h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
         #resultsSummary p {
-            margin: 8px 0;
+            margin: 10px 0;
         }
         #resultsSummary strong {
             color: #007bff;
+        }
+        #downloadReportButton {
+            background-color: #28a745;
+            margin-top: 30px;
+            display: none;
+        }
+        #downloadReportButton:hover {
+            background-color: #218838;
         }
 
         @media (min-width: 600px) {
             .controls {
                 flex-direction: row;
                 justify-content: center;
+                flex-wrap: wrap;
+                gap: 30px;
+            }
+            .controls div {
+                width: auto;
+                flex: none;
+                min-width: 220px;
             }
         }
         @media (max-width: 599px) {
             .container {
-                padding: 20px;
+                padding: 25px 15px;
             }
             .controls select,
             button {
                 max-width: none;
             }
-            #chartContainer {
-                height: 250px;
+            #chartContainer, #generalCyclesChartContainer {
+                height: 280px;
+                margin-top: 30px;
+            }
+            #chartContainer h2, #generalCyclesChartContainer h2 {
+                font-size: 1.2em;
+            }
+            #resultsSummary {
+                margin-top: 30px;
+            }
+            #resultsSummary h2, #resultsSummary h3 {
+                font-size: 1.1em;
             }
         }
     </style>
@@ -118,13 +166,22 @@
 
         <div class="controls">
             <div>
-                <label for="numCycles">Número de Ciclos de Teste:</label>
-                <select id="numCycles">
-                    <option value="5">5 ciclos</option>
-                    <option value="10" selected>10 ciclos</option>
-                    <option value="20">20 ciclos</option>
-                    <option value="50">50 ciclos</option>
-                    <option value="100">100 ciclos</option>
+                <label for="numGeneralCycles">Número de Rodadas Gerais:</label>
+                <select id="numGeneralCycles">
+                    <option value="1" selected>1 rodada</option>
+                    <option value="2">2 rodadas</option>
+                    <option value="3">3 rodadas</option>
+                    <option value="5">5 rodadas</option>
+                    <option value="10">10 rodadas</option>
+                </select>
+            </div>
+            <div>
+                <label for="numUniqueCycles">Downloads por Rodada:</label>
+                <select id="numUniqueCycles">
+                    <option value="5">5 downloads</option>
+                    <option value="10" selected>10 downloads</option>
+                    <option value="20">20 downloads</option>
+                    <option value="50">50 downloads</option>
                 </select>
             </div>
         </div>
@@ -133,32 +190,46 @@
         <div id="progress">Progresso: --</div>
         
         <div id="chartContainer">
+            <h2>Velocidade de Cada Download</h2>
             <canvas id="speedChart"></canvas>
         </div>
 
+        <div id="generalCyclesChartContainer">
+            <h2>Média de Velocidade por Rodada Geral</h2>
+            <canvas id="generalCyclesChart"></canvas>
+        </div>
+
         <div id="resultsSummary"></div>
+        <button id="downloadReportButton" style="display: none;">Baixar Relatório</button>
     </div>
 
     <script>
         const startButton = document.getElementById('startButton');
-        const numCyclesSelect = document.getElementById('numCycles');
+        const numGeneralCyclesSelect = document.getElementById('numGeneralCycles');
+        const numUniqueCyclesSelect = document.getElementById('numUniqueCycles');
         const progressDiv = document.getElementById('progress');
         const resultsSummaryDiv = document.getElementById('resultsSummary');
-        const chartCanvas = document.getElementById('speedChart');
+        const individualChartCanvas = document.getElementById('speedChart');
+        const generalChartCanvas = document.getElementById('generalCyclesChart');
+        const downloadReportButton = document.getElementById('downloadReportButton');
 
         const fileUrl = 'https://brenolobao.github.io/searchTeste/test.zip';
         const fileSizeInBytes = 15728640;
 
-        let numCycles = 0;
-        let downloadSpeeds = [];
-        let speedChart;
+        let numGeneralCycles = 0;
+        let numUniqueCycles = 0;
+        let individualDownloadSpeeds = [];
+        let generalCycleAverageSpeeds = [];
+        let individualSpeedChart;
+        let generalCycleSpeedChart;
         let testStartTime;
+        let finalReportData = {};
 
-        function initializeChart() {
-            if (speedChart) {
-                speedChart.destroy();
+        function initializeCharts() {
+            if (individualSpeedChart) {
+                individualSpeedChart.destroy();
             }
-            speedChart = new Chart(chartCanvas, {
+            individualSpeedChart = new Chart(individualChartCanvas, {
                 type: 'line',
                 data: {
                     labels: [],
@@ -180,13 +251,62 @@
                         x: {
                             title: {
                                 display: true,
-                                text: 'Ciclo de Teste'
+                                text: 'Download #'
                             }
                         },
                         y: {
                             title: {
                                 display: true,
                                 text: 'Velocidade (Mbps)'
+                            },
+                            beginAtZero: true,
+                            min: 0
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.raw.toFixed(2)} Mbps`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            if (generalCycleSpeedChart) {
+                generalCycleSpeedChart.destroy();
+            }
+            generalCycleSpeedChart = new Chart(generalChartCanvas, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Média de Velocidade por Rodada (Mbps)',
+                        data: [],
+                        borderColor: '#28a745',
+                        backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 3,
+                        pointBackgroundColor: '#28a745'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Rodada Geral #'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Média de Velocidade (Mbps)'
                             },
                             beginAtZero: true,
                             min: 0
@@ -230,27 +350,57 @@
 
         async function startTest() {
             startButton.disabled = true;
-            numCyclesSelect.disabled = true;
+            numGeneralCyclesSelect.disabled = true;
+            numUniqueCyclesSelect.disabled = true;
+            downloadReportButton.style.display = 'none';
             resultsSummaryDiv.innerHTML = '';
             
-            numCycles = parseInt(numCyclesSelect.value);
-            downloadSpeeds = [];
+            numGeneralCycles = parseInt(numGeneralCyclesSelect.value);
+            numUniqueCycles = parseInt(numUniqueCyclesSelect.value);
+            individualDownloadSpeeds = [];
+            generalCycleAverageSpeeds = [];
             testStartTime = performance.now();
+            finalReportData = {};
 
-            progressDiv.textContent = `Progresso: 0/${numCycles} ciclos`;
+            progressDiv.textContent = `Preparando teste...`;
             
-            initializeChart();
+            initializeCharts();
+            let totalDownloadsCompleted = 0;
 
-            for (let i = 0; i < numCycles; i++) {
-                progressDiv.textContent = `Progresso: ${i + 1}/${numCycles} ciclos`;
-                const currentSpeedBps = await measureSpeed();
-                downloadSpeeds.push(currentSpeedBps);
+            for (let g = 0; g < numGeneralCycles; g++) {
+                let currentGeneralCycleSpeeds = [];
+                for (let u = 0; u < numUniqueCycles; u++) {
+                    totalDownloadsCompleted++;
+                    progressDiv.textContent = `Rodada ${g + 1}/${numGeneralCycles} - Download ${u + 1}/${numUniqueCycles} (${totalDownloadsCompleted} total)`;
+                    
+                    const currentSpeedBps = await measureSpeed();
+                    individualDownloadSpeeds.push(currentSpeedBps);
+                    currentGeneralCycleSpeeds.push(currentSpeedBps);
 
-                const speedMbps = (currentSpeedBps * 8) / (1024 * 1024);
+                    const speedMbps = (currentSpeedBps * 8) / (1024 * 1024);
 
-                speedChart.data.labels.push(`Ciclo ${i + 1}`);
-                speedChart.data.datasets[0].data.push(speedMbps);
-                speedChart.update();
+                    individualSpeedChart.data.labels.push(`#${totalDownloadsCompleted}`);
+                    individualSpeedChart.data.datasets[0].data.push(speedMbps);
+                    individualSpeedChart.update();
+                }
+
+                if (currentGeneralCycleSpeeds.length > 0) {
+                    const validGeneralCycleSpeeds = currentGeneralCycleSpeeds.filter(speed => speed > 0);
+                    if (validGeneralCycleSpeeds.length > 0) {
+                        const averageGeneralSpeedBps = validGeneralCycleSpeeds.reduce((sum, speed) => sum + speed, 0) / validGeneralCycleSpeeds.length;
+                        const averageGeneralSpeedMbps = (averageGeneralSpeedBps * 8) / (1024 * 1024);
+                        generalCycleAverageSpeeds.push(averageGeneralSpeedMbps);
+
+                        generalCycleSpeedChart.data.labels.push(`Rodada ${g + 1}`);
+                        generalCycleSpeedChart.data.datasets[0].data.push(averageGeneralSpeedMbps);
+                        generalCycleSpeedChart.update();
+                    } else {
+                        generalCycleAverageSpeeds.push(0);
+                        generalCycleSpeedChart.data.labels.push(`Rodada ${g + 1}`);
+                        generalCycleSpeedChart.data.datasets[0].data.push(0);
+                        generalCycleSpeedChart.update();
+                    }
+                }
             }
             
             finalizeTest();
@@ -261,35 +411,170 @@
             const totalTestTimeSeconds = (totalTestTimeMs / 1000).toFixed(2);
 
             startButton.disabled = false;
-            numCyclesSelect.disabled = false;
+            numGeneralCyclesSelect.disabled = false;
+            numUniqueCyclesSelect.disabled = false;
             progressDiv.textContent = `Teste concluído em ${totalTestTimeSeconds} segundos.`;
 
-            if (downloadSpeeds.length > 0) {
-                const validSpeeds = downloadSpeeds.filter(speed => speed > 0);
+            let finalOverallAverage = 0;
 
-                if (validSpeeds.length > 0) {
-                    const speedsMbps = validSpeeds.map(speedBps => (speedBps * 8) / (1024 * 1024));
+            if (individualDownloadSpeeds.length > 0) {
+                const validIndividualSpeeds = individualDownloadSpeeds.filter(speed => speed > 0);
+
+                if (validIndividualSpeeds.length > 0) {
+                    const speedsMbps = validIndividualSpeeds.map(speedBps => (speedBps * 8) / (1024 * 1024));
 
                     const bestSpeed = Math.max(...speedsMbps);
                     const worstSpeed = Math.min(...speedsMbps);
                     const averageSpeed = speedsMbps.reduce((sum, speed) => sum + speed, 0) / speedsMbps.length;
 
                     resultsSummaryDiv.innerHTML = `
-                        <h2>Resultados do Download</h2>
-                        <p>Melhor Velocidade: <strong>${bestSpeed.toFixed(2)} Mbps</strong></p>
-                        <p>Pior Velocidade: <strong>${worstSpeed.toFixed(2)} Mbps</strong></p>
-                        <p>Velocidade Média: <strong>${averageSpeed.toFixed(2)} Mbps</strong></p>
+                        <h2>Resultados Finais (Todos os Downloads)</h2>
+                        <p>Total de Downloads Realizados: <strong>${individualDownloadSpeeds.length}</strong></p>
+                        <p>Melhor Velocidade Individual: <strong>${bestSpeed.toFixed(2)} Mbps</strong></p>
+                        <p>Pior Velocidade Individual: <strong>${worstSpeed.toFixed(2)} Mbps</strong></p>
+                        <p>Velocidade Média Geral: <strong>${averageSpeed.toFixed(2)} Mbps</strong></p>
                     `;
+
+                    finalReportData.totalDownloads = individualDownloadSpeeds.length;
+                    finalReportData.bestIndividualSpeed = bestSpeed.toFixed(2);
+                    finalReportData.worstIndividualSpeed = worstSpeed.toFixed(2);
+                    finalReportData.averageOverallSpeed = averageSpeed.toFixed(2);
+
                 } else {
-                    resultsSummaryDiv.innerHTML = '<p>Não foi possível obter medições válidas de download durante o teste.</p>';
+                    resultsSummaryDiv.innerHTML = '<p>Não foi possível obter medições válidas de download.</p>';
                 }
             } else {
                 resultsSummaryDiv.innerHTML = '<p>Nenhuma medição de velocidade de download realizada.</p>';
             }
+
+            if (generalCycleAverageSpeeds.length > 0) {
+                const validGeneralAverages = generalCycleAverageSpeeds.filter(speed => speed > 0);
+                if (validGeneralAverages.length > 0) {
+                    finalOverallAverage = validGeneralAverages.reduce((sum, speed) => sum + speed, 0) / validGeneralAverages.length;
+                    resultsSummaryDiv.innerHTML += `
+                        <h3>Média das Rodadas Gerais: <strong>${finalOverallAverage.toFixed(2)} Mbps</strong></h3>
+                    `;
+                    finalReportData.averageGeneralCycles = finalOverallAverage.toFixed(2);
+                    finalReportData.generalCycleAverages = generalCycleAverageSpeeds.map((speed, index) => `Rodada ${index + 1}: ${speed.toFixed(2)} Mbps`);
+                }
+            }
+            finalReportData.testDuration = totalTestTimeSeconds;
+            finalReportData.numGeneralCycles = numGeneralCycles;
+            finalReportData.numUniqueCycles = numUniqueCycles;
+
+            downloadReportButton.style.display = 'block';
         }
 
-        initializeChart();
+        async function generatePdfReport() {
+            downloadReportButton.disabled = true; // Desabilita o botão enquanto gera o PDF
+            downloadReportButton.textContent = 'Gerando PDF...';
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            let yPos = 20;
+
+            doc.setFontSize(18);
+            doc.text("Relatório de Teste de Velocidade da Internet", 105, yPos, { align: 'center' });
+            yPos += 15;
+
+            doc.setFontSize(12);
+            doc.text(`Data do Teste: ${new Date().toLocaleString('pt-BR')}`, 10, yPos);
+            yPos += 10;
+            doc.text(`Duração Total do Teste: ${finalReportData.testDuration || 'N/A'} segundos`, 10, yPos);
+            yPos += 10;
+            doc.text(`Configuração do Teste: ${finalReportData.numGeneralCycles || 'N/A'} Rodadas Gerais, ${finalReportData.numUniqueCycles || 'N/A'} Downloads por Rodada`, 10, yPos);
+            yPos += 15;
+
+            doc.setFontSize(16);
+            doc.text("Resultados Finais (Todos os Downloads)", 10, yPos);
+            yPos += 10;
+            doc.setFontSize(12);
+            doc.text(`Total de Downloads Realizados: ${finalReportData.totalDownloads || 'N/A'}`, 10, yPos);
+            yPos += 10;
+            doc.text(`Melhor Velocidade Individual: ${finalReportData.bestIndividualSpeed || 'N/A'} Mbps`, 10, yPos);
+            yPos += 10;
+            doc.text(`Pior Velocidade Individual: ${finalReportData.worstIndividualSpeed || 'N/A'} Mbps`, 10, yPos);
+            yPos += 10;
+            doc.text(`Velocidade Média Geral: ${finalReportData.averageOverallSpeed || 'N/A'} Mbps`, 10, yPos);
+            yPos += 15;
+
+            // --- Adicionar Gráfico de Velocidade de Cada Download ---
+            doc.setFontSize(16);
+            doc.text("Gráfico: Velocidade de Cada Download", 10, yPos);
+            yPos += 10;
+
+            // Captura o canvas do primeiro gráfico como imagem
+            const individualChartImgData = await html2canvas(individualChartCanvas, {
+                scale: 2 // Aumenta a escala para melhor qualidade no PDF
+            }).then(canvas => canvas.toDataURL('image/png'));
+
+            // Calcula a largura e altura da imagem no PDF para caber na página
+            const imgWidth = 180; // Largura desejada para a imagem no PDF (em mm)
+            const imgHeight = (individualChartCanvas.height * imgWidth) / individualChartCanvas.width;
+
+            if (yPos + imgHeight + 10 > doc.internal.pageSize.height) { // Verifica se há espaço
+                doc.addPage();
+                yPos = 20;
+            }
+            doc.addImage(individualChartImgData, 'PNG', 10, yPos, imgWidth, imgHeight);
+            yPos += imgHeight + 15; // Espaço após o gráfico
+
+            // --- Adicionar Gráfico de Média de Velocidade por Rodada Geral ---
+            doc.setFontSize(16);
+            doc.text("Gráfico: Média de Velocidade por Rodada Geral", 10, yPos);
+            yPos += 10;
+
+            // Captura o canvas do segundo gráfico como imagem
+            const generalChartImgData = await html2canvas(generalChartCanvas, {
+                scale: 2 // Aumenta a escala para melhor qualidade no PDF
+            }).then(canvas => canvas.toDataURL('image/png'));
+
+            // Calcula a largura e altura da imagem no PDF
+            const generalImgWidth = 180;
+            const generalImgHeight = (generalChartCanvas.height * generalImgWidth) / generalChartCanvas.width;
+
+            if (yPos + generalImgHeight + 10 > doc.internal.pageSize.height) { // Verifica se há espaço
+                doc.addPage();
+                yPos = 20;
+            }
+            doc.addImage(generalChartImgData, 'PNG', 10, yPos, generalImgWidth, generalImgHeight);
+            yPos += generalImgHeight + 15;
+
+            // --- Adicionar Médias de Velocidade por Rodada Geral (Texto) ---
+            if (finalReportData.generalCycleAverages && finalReportData.generalCycleAverages.length > 0) {
+                doc.setFontSize(16);
+                if (yPos > 270) { // Nova verificação de página antes da próxima seção de texto
+                    doc.addPage();
+                    yPos = 20;
+                }
+                doc.text("Médias Detalhadas por Rodada Geral", 10, yPos);
+                yPos += 10;
+                doc.setFontSize(12);
+                finalReportData.generalCycleAverages.forEach(line => {
+                    if (yPos > 280) {
+                        doc.addPage();
+                        yPos = 20;
+                    }
+                    doc.text(line, 10, yPos);
+                    yPos += 8;
+                });
+                if (finalReportData.averageGeneralCycles) {
+                    yPos += 10;
+                    doc.setFontSize(14);
+                    doc.text(`Média de Todas as Rodadas: ${finalReportData.averageGeneralCycles} Mbps`, 10, yPos);
+                }
+            }
+
+            doc.save("Relatorio_Teste_Velocidade.pdf");
+
+            downloadReportButton.disabled = false; // Reabilita o botão
+            downloadReportButton.textContent = 'Baixar Relatório';
+        }
+
+        initializeCharts();
         startButton.addEventListener('click', startTest);
+        downloadReportButton.addEventListener('click', generatePdfReport);
     </script>
 </body>
 </html>
