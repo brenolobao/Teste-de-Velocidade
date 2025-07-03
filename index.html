@@ -26,11 +26,25 @@
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             text-align: center;
             width: 100%;
+            max-width: 800px;
             box-sizing: border-box;
         }
         h1 {
             color: #333;
             margin-bottom: 30px;
+        }
+        .mode-selection {
+            margin-bottom: 25px;
+        }
+        .mode-selection button {
+            background-color: #6c757d; /* Cinza para botões de modo */
+            margin: 0 10px;
+            padding: 10px 20px;
+            font-size: 1em;
+            max-width: 200px;
+        }
+        .mode-selection button.active {
+            background-color: #007bff; /* Azul para o modo ativo */
         }
         .controls {
             margin-bottom: 20px;
@@ -50,7 +64,7 @@
             display: block;
             margin-bottom: 8px;
         }
-        .controls select {
+        .controls select, .controls input[type="text"] {
             padding: 10px;
             border-radius: 5px;
             border: 1px solid #ddd;
@@ -121,6 +135,24 @@
         #downloadReportButton:hover {
             background-color: #218838;
         }
+        /* Mapeamento Específico */
+        #mappingControls {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px dashed #ccc;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+            display: none; /* Escondido por padrão */
+        }
+        #roomInputGroup {
+            margin-top: 15px;
+            margin-bottom: 15px;
+        }
+        #mappingProgress {
+            font-size: 1.1em;
+            color: #666;
+            margin-bottom: 10px;
+        }
 
         @media (min-width: 600px) {
             .controls {
@@ -156,6 +188,10 @@
             #resultsSummary h2, #resultsSummary h3 {
                 font-size: 1.1em;
             }
+            .mode-selection button {
+                width: 100%;
+                margin-bottom: 10px;
+            }
         }
     </style>
 </head>
@@ -163,29 +199,46 @@
     <div class="container">
         <h1>Medidor de Velocidade da Internet</h1>
 
-        <div class="controls">
-            <div>
-                <label for="numGeneralCycles">Número de Rodadas Gerais:</label>
-                <select id="numGeneralCycles">
-                    <option value="1" selected>1 rodada</option>
-                    <option value="2">2 rodadas</option>
-                    <option value="3">3 rodadas</option>
-                    <option value="5">5 rodadas</option>
-                    <option value="10">10 rodadas</option>
-                </select>
-            </div>
-            <div>
-                <label for="numUniqueCycles">Downloads por Rodada:</label>
-                <select id="numUniqueCycles">
-                    <option value="5">5 downloads</option>
-                    <option value="10" selected>10 downloads</option>
-                    <option value="20">20 downloads</option>
-                    <option value="50">50 downloads</option>
-                </select>
-            </div>
+        <div class="mode-selection">
+            <button id="normalModeBtn" class="active">Teste Normal</button>
+            <button id="mappingModeBtn">Mapear Casa</button>
         </div>
 
-        <button id="startButton">Iniciar Teste</button>
+        <div id="normalTestSection">
+            <div class="controls">
+                <div>
+                    <label for="numGeneralCycles">Número de Rodadas Gerais:</label>
+                    <select id="numGeneralCycles">
+                        <option value="1" selected>1 rodada</option>
+                        <option value="2">2 rodadas</option>
+                        <option value="3">3 rodadas</option>
+                        <option value="5">5 rodadas</option>
+                        <option value="10">10 rodadas</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="numUniqueCycles">Downloads por Rodada:</label>
+                    <select id="numUniqueCycles">
+                        <option value="5">5 downloads</option>
+                        <option value="10" selected>10 downloads</option>
+                        <option value="20">20 downloads</option>
+                        <option value="50">50 downloads</option>
+                    </select>
+                </div>
+            </div>
+            <button id="startButton">Iniciar Teste</button>
+        </div>
+
+        <div id="mappingControls" style="display: none;">
+            <p id="mappingProgress">Para iniciar o mapeamento, digite o nome do cômodo (ex: "Roteador") e clique em 'Realizar Teste neste Cômodo'.</p>
+            <div id="roomInputGroup">
+                <label for="currentRoom">Nome do Cômodo:</label>
+                <input type="text" id="currentRoom" placeholder="Ex: Sala, Quarto, Cozinha">
+            </div>
+            <button id="startMappingTestBtn">Realizar Teste neste Cômodo</button>
+            <button id="finishMappingBtn" style="background-color: #dc3545; display: none;">Finalizar Mapeamento</button>
+        </div>
+
         <div id="progress">Progresso: --</div>
         
         <div id="chartContainer">
@@ -212,6 +265,17 @@
         const generalChartCanvas = document.getElementById('generalCyclesChart');
         const downloadReportButton = document.getElementById('downloadReportButton');
 
+        // Novos elementos para o mapeamento
+        const normalModeBtn = document.getElementById('normalModeBtn');
+        const mappingModeBtn = document.getElementById('mappingModeBtn');
+        const normalTestSection = document.getElementById('normalTestSection');
+        const mappingControls = document.getElementById('mappingControls');
+        const mappingProgress = document.getElementById('mappingProgress');
+        const currentRoomInput = document.getElementById('currentRoom');
+        const startMappingTestBtn = document.getElementById('startMappingTestBtn');
+        const finishMappingBtn = document.getElementById('finishMappingBtn');
+
+        // *** URL ATUALIZADA E CORRETA ***
         const fileUrl = 'https://brenolobao.github.io/Teste-de-Velocidade/15MBtest.zip';
         const fileSizeInBytes = 15728640;
 
@@ -223,6 +287,10 @@
         let generalCycleSpeedChart;
         let testStartTime;
         let finalReportData = {};
+        
+        // Variáveis para o modo de mapeamento
+        let currentMode = 'normal'; // 'normal' ou 'mapping'
+        let mappingResults = []; // [{ room: 'Sala', speed: 100, individualSpeeds: [20, 30, 25] }]
 
         function initializeCharts() {
             if (individualSpeedChart) {
@@ -347,7 +415,7 @@
             }
         }
 
-        async function startTest() {
+        async function startNormalTest() {
             startButton.disabled = true;
             numGeneralCyclesSelect.disabled = true;
             numUniqueCyclesSelect.disabled = true;
@@ -402,10 +470,10 @@
                 }
             }
             
-            finalizeTest();
+            finalizeNormalTest();
         }
 
-        function finalizeTest() {
+        function finalizeNormalTest() {
             const totalTestTimeMs = performance.now() - testStartTime;
             const totalTestTimeSeconds = (totalTestTimeMs / 1000).toFixed(2);
 
@@ -460,120 +528,300 @@
             finalReportData.testDuration = totalTestTimeSeconds;
             finalReportData.numGeneralCycles = numGeneralCycles;
             finalReportData.numUniqueCycles = numUniqueCycles;
+            finalReportData.isMappingTest = false; // Indica que não é teste de mapeamento
 
             downloadReportButton.style.display = 'block';
         }
 
+        // --- Funções de Mapeamento (Sem localização) ---
+        async function startMappingFlow() {
+            mappingResults = []; // Resetar resultados de mapeamento
+            finishMappingBtn.style.display = 'none'; // Esconder botão de finalizar
+            resultsSummaryDiv.innerHTML = '';
+            
+            // Reabilita os campos de controle caso o usuário tenha clicado em "iniciar teste" anteriormente
+            numGeneralCyclesSelect.disabled = false; 
+            numUniqueCyclesSelect.disabled = false;
+
+            // Define o número de downloads por rodada para mapeamento (ex: 5 downloads por cômodo)
+            numGeneralCyclesSelect.value = "1"; // Uma rodada geral por cômodo
+            numUniqueCyclesSelect.value = "5"; // 5 downloads por cômodo (pode ser ajustado)
+            
+            // Desabilita os seletores no modo mapeamento para evitar que o usuário altere
+            numGeneralCyclesSelect.disabled = true; 
+            numUniqueCyclesSelect.disabled = true;
+
+            mappingProgress.textContent = "Para iniciar o mapeamento, digite o nome do cômodo (ex: 'Roteador') e clique em 'Realizar Teste neste Cômodo'.";
+            currentRoomInput.value = ''; // Limpa o campo
+            currentRoomInput.focus();
+            startMappingTestBtn.disabled = false;
+            testStartTime = performance.now(); // Inicia o timer do mapeamento
+        }
+
+        async function performRoomTest() {
+            const roomName = currentRoomInput.value.trim();
+            if (!roomName) {
+                alert("Por favor, digite o nome do cômodo.");
+                currentRoomInput.focus();
+                return;
+            }
+
+            startMappingTestBtn.disabled = true;
+            finishMappingBtn.disabled = true;
+            progressDiv.textContent = `Realizando teste de velocidade em "${roomName}"...`;
+            
+            // Realiza o teste de velocidade (apenas 1 rodada geral com os downloads definidos)
+            numGeneralCycles = 1; // Sempre 1 rodada para cada cômodo
+            numUniqueCycles = parseInt(numUniqueCyclesSelect.value); // Usa o valor selecionado
+
+            // IMPORTANTE: individualDownloadSpeeds precisa ser resetado para o gráfico individual de CADA CÔMODO
+            individualDownloadSpeeds = []; 
+            // generalCycleAverageSpeeds NÃO DEVE ser resetado aqui no mapping mode, pois queremos acumular as médias
+            
+            // Reinicializar apenas o gráfico individual, se necessário, ou garantir que ele limpe seus dados
+            individualSpeedChart.data.labels = [];
+            individualSpeedChart.data.datasets[0].data = [];
+            individualSpeedChart.update();
+
+
+            let currentRoomTotalSpeedBps = 0;
+            let currentRoomValidDownloads = 0;
+            let currentRoomIndividualSpeedsMbps = []; // Para armazenar as velocidades individuais do cômodo
+
+            for (let u = 0; u < numUniqueCycles; u++) {
+                progressDiv.textContent = `Teste em "${roomName}": Download ${u + 1}/${numUniqueCycles}`;
+                const currentSpeedBps = await measureSpeed();
+                
+                if (currentSpeedBps > 0) {
+                    currentRoomTotalSpeedBps += currentSpeedBps;
+                    currentRoomValidDownloads++;
+                }
+
+                const speedMbps = (currentSpeedBps * 8) / (1024 * 1024);
+                currentRoomIndividualSpeedsMbps.push(speedMbps); // Salva para o gráfico do cômodo
+                
+                individualSpeedChart.data.labels.push(`D ${u + 1} (${roomName})`);
+                individualSpeedChart.data.datasets[0].data.push(speedMbps);
+                individualSpeedChart.update();
+            }
+
+            let roomAverageSpeedMbps = 0;
+            if (currentRoomValidDownloads > 0) {
+                const roomAverageSpeedBps = currentRoomTotalSpeedBps / currentRoomValidDownloads;
+                roomAverageSpeedMbps = (roomAverageSpeedBps * 8) / (1024 * 1024);
+            }
+            
+            // Atualiza o gráfico geral de ciclos com a média do cômodo atual
+            generalCycleSpeedChart.data.labels.push(roomName);
+            generalCycleSpeedChart.data.datasets[0].data.push(roomAverageSpeedMbps);
+            generalCycleSpeedChart.update();
+
+            mappingResults.push({
+                room: roomName,
+                speed: roomAverageSpeedMbps.toFixed(2),
+                individualSpeeds: currentRoomIndividualSpeedsMbps // Adicionado!
+            });
+
+            mappingProgress.textContent = `Teste em "${roomName}" (${roomAverageSpeedMbps.toFixed(2)} Mbps) concluído! Agora, vá para outro cômodo, digite o nome e clique em 'Realizar Teste neste Cômodo', ou clique em 'Finalizar Mapeamento'.`;
+            currentRoomInput.value = ''; // Limpa para o próximo cômodo
+            currentRoomInput.focus();
+            
+            startMappingTestBtn.disabled = false;
+            finishMappingBtn.style.display = 'block'; 
+            finishMappingBtn.disabled = false;
+            progressDiv.textContent = `Teste de cômodo concluído.`;
+        }
+
+        function finalizeMappingTest() {
+            finalReportData.isMappingTest = true;
+            finalReportData.mappingResults = mappingResults;
+            finalReportData.testDuration = ((performance.now() - testStartTime) / 1000).toFixed(2);
+
+            resultsSummaryDiv.innerHTML = `
+                <h2>Mapeamento de Sinal Concluído!</h2>
+                <p>O relatório detalhado estará no PDF.</p>
+                <p>Total de cômodos testados: <strong>${mappingResults.length}</strong></p>
+                <p>Duração total do mapeamento: <strong>${finalReportData.testDuration} segundos</strong></p>
+            `;
+
+            downloadReportButton.style.display = 'block';
+            downloadReportButton.disabled = false; 
+            
+            mappingProgress.textContent = "Mapeamento finalizado. Você pode baixar o relatório ou iniciar um novo mapeamento.";
+            startMappingTestBtn.disabled = false;
+            finishMappingBtn.style.display = 'none'; 
+            currentRoomInput.value = ''; 
+        }
+
+        // --- Função Auxiliar para Baixar Imagem ---
+        function downloadImage(canvas, filename) {
+            if (!canvas || !canvas.getContext) {
+                console.error("Canvas inválido para download da imagem.");
+                return;
+            }
+
+            const imgData = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.href = imgData;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // --- Geração do Relatório PDF e Imagens ---
         async function generatePdfReport() {
-            downloadReportButton.disabled = true; // Desabilita o botão enquanto gera o PDF
-            downloadReportButton.textContent = 'Gerando PDF...';
+            downloadReportButton.disabled = true;
+            downloadReportButton.textContent = 'Gerando...';
 
             const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
+            const doc = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4'
+            });
 
             let yPos = 20;
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const margin = 10;
 
             doc.setFontSize(18);
-            doc.text("Relatório de Teste de Velocidade da Internet", 105, yPos, { align: 'center' });
+            doc.text("Relatório de Teste de Velocidade da Internet", pageWidth / 2, yPos, { align: 'center' });
             yPos += 15;
 
             doc.setFontSize(12);
-            doc.text(`Data do Teste: ${new Date().toLocaleString('pt-BR')}`, 10, yPos);
+            doc.text(`Data do Teste: ${new Date().toLocaleString('pt-BR')}`, margin, yPos);
             yPos += 10;
-            doc.text(`Duração Total do Teste: ${finalReportData.testDuration || 'N/A'} segundos`, 10, yPos);
-            yPos += 10;
-            doc.text(`Configuração do Teste: ${finalReportData.numGeneralCycles || 'N/A'} Rodadas Gerais, ${finalReportData.numUniqueCycles || 'N/A'} Downloads por Rodada`, 10, yPos);
+            doc.text(`Duração Total do Teste: ${finalReportData.testDuration || 'N/A'} segundos`, margin, yPos);
             yPos += 15;
 
-            doc.setFontSize(16);
-            doc.text("Resultados Finais (Todos os Downloads)", 10, yPos);
-            yPos += 10;
-            doc.setFontSize(12);
-            doc.text(`Total de Downloads Realizados: ${finalReportData.totalDownloads || 'N/A'}`, 10, yPos);
-            yPos += 10;
-            doc.text(`Melhor Velocidade Individual: ${finalReportData.bestIndividualSpeed || 'N/A'} Mbps`, 10, yPos);
-            yPos += 10;
-            doc.text(`Pior Velocidade Individual: ${finalReportData.worstIndividualSpeed || 'N/A'} Mbps`, 10, yPos);
-            yPos += 10;
-            doc.text(`Velocidade Média Geral: ${finalReportData.averageOverallSpeed || 'N/A'} Mbps`, 10, yPos);
-            yPos += 15;
-
-            // --- Adicionar Gráfico de Velocidade de Cada Download ---
-            doc.setFontSize(16);
-            doc.text("Gráfico: Velocidade de Cada Download", 10, yPos);
-            yPos += 10;
-
-            // Captura o canvas do primeiro gráfico como imagem
-            const individualChartImgData = await html2canvas(individualChartCanvas, {
-                scale: 2 // Aumenta a escala para melhor qualidade no PDF
-            }).then(canvas => canvas.toDataURL('image/png'));
-
-            // Calcula a largura e altura da imagem no PDF para caber na página
-            const imgWidth = 180; // Largura desejada para a imagem no PDF (em mm)
-            const imgHeight = (individualChartCanvas.height * imgWidth) / individualChartCanvas.width;
-
-            if (yPos + imgHeight + 10 > doc.internal.pageSize.height) { // Verifica se há espaço
-                doc.addPage();
-                yPos = 20;
-            }
-            doc.addImage(individualChartImgData, 'PNG', 10, yPos, imgWidth, imgHeight);
-            yPos += imgHeight + 15; // Espaço após o gráfico
-
-            // --- Adicionar Gráfico de Média de Velocidade por Rodada Geral ---
-            doc.setFontSize(16);
-            doc.text("Gráfico: Média de Velocidade por Rodada Geral", 10, yPos);
-            yPos += 10;
-
-            // Captura o canvas do segundo gráfico como imagem
-            const generalChartImgData = await html2canvas(generalChartCanvas, {
-                scale: 2 // Aumenta a escala para melhor qualidade no PDF
-            }).then(canvas => canvas.toDataURL('image/png'));
-
-            // Calcula a largura e altura da imagem no PDF
-            const generalImgWidth = 180;
-            const generalImgHeight = (generalChartCanvas.height * generalImgWidth) / generalChartCanvas.width;
-
-            if (yPos + generalImgHeight + 10 > doc.internal.pageSize.height) { // Verifica se há espaço
-                doc.addPage();
-                yPos = 20;
-            }
-            doc.addImage(generalChartImgData, 'PNG', 10, yPos, generalImgWidth, generalImgHeight);
-            yPos += generalImgHeight + 15;
-
-            // --- Adicionar Médias de Velocidade por Rodada Geral (Texto) ---
-            if (finalReportData.generalCycleAverages && finalReportData.generalCycleAverages.length > 0) {
+            if (finalReportData.isMappingTest) {
                 doc.setFontSize(16);
-                if (yPos > 270) { // Nova verificação de página antes da próxima seção de texto
-                    doc.addPage();
-                    yPos = 20;
-                }
-                doc.text("Médias Detalhadas por Rodada Geral", 10, yPos);
+                doc.text("Relatório de Mapeamento de Sinal Wi-Fi", margin, yPos);
                 yPos += 10;
+
                 doc.setFontSize(12);
-                finalReportData.generalCycleAverages.forEach(line => {
-                    if (yPos > 280) {
+                doc.text(`Total de Cômodos Testados: ${finalReportData.mappingResults ? finalReportData.mappingResults.length : 'N/A'}`, margin, yPos);
+                yPos += 15;
+
+                doc.setFontSize(14);
+                doc.text("Detalhes de Velocidade por Cômodo:", margin, yPos);
+                yPos += 10;
+
+                for (const result of finalReportData.mappingResults) {
+                    if (yPos + 20 > doc.internal.pageSize.height) { 
                         doc.addPage();
                         yPos = 20;
                     }
-                    doc.text(line, 10, yPos);
+                    doc.setFontSize(12);
+                    doc.text(`Cômodo: ${result.room} - Velocidade Média: ${result.speed} Mbps`, margin, yPos);
                     yPos += 8;
-                });
+                }
+                
+                yPos += 15; 
+            } else {
+                doc.setFontSize(12);
+                doc.text(`Configuração do Teste: ${finalReportData.numGeneralCycles || 'N/A'} Rodadas Gerais, ${finalReportData.numUniqueCycles || 'N/A'} Downloads por Rodada`, margin, yPos);
+                yPos += 15;
+
+                doc.setFontSize(16);
+                doc.text("Resultados Finais (Todos os Downloads)", margin, yPos);
+                yPos += 10;
+                doc.setFontSize(12);
+                doc.text(`Total de Downloads Realizados: ${finalReportData.totalDownloads || 'N/A'}`, margin, yPos);
+                yPos += 10;
+                doc.text(`Melhor Velocidade Individual: ${finalReportData.bestIndividualSpeed || 'N/A'} Mbps`, margin, yPos);
+                yPos += 10;
+                doc.text(`Pior Velocidade Individual: ${finalReportData.worstIndividualSpeed || 'N/A'} Mbps`, margin, yPos);
+                yPos += 10;
+                doc.text(`Velocidade Média Geral: ${finalReportData.averageOverallSpeed || 'N/A'} Mbps`, margin, yPos);
+                yPos += 15;
+
                 if (finalReportData.averageGeneralCycles) {
-                    yPos += 10;
                     doc.setFontSize(14);
-                    doc.text(`Média de Todas as Rodadas: ${finalReportData.averageGeneralCycles} Mbps`, 10, yPos);
+                    doc.text(`Média de Todas as Rodadas: ${finalReportData.averageGeneralCycles} Mbps`, margin, yPos);
+                    yPos += 15;
                 }
             }
 
+            // Salva o PDF primeiro
             doc.save("Relatorio_Teste_Velocidade.pdf");
 
-            downloadReportButton.disabled = false; // Reabilita o botão
+            // Pequeno atraso antes de baixar as imagens para não sobrecarregar o navegador
+            setTimeout(() => {
+                // Baixa a imagem do gráfico individual SOMENTE se NÃO FOR um teste de mapeamento
+                if (!finalReportData.isMappingTest) {
+                    if (individualSpeedChart) {
+                        downloadImage(individualChartCanvas, 'grafico_velocidade_individual.png');
+                    }
+                }
+
+                // Pequeno atraso antes de baixar a segunda imagem
+                setTimeout(() => {
+                    // Baixa a imagem do gráfico de médias gerais (sempre, em ambos os modos)
+                    if (generalCycleSpeedChart) {
+                        downloadImage(generalChartCanvas, 'grafico_medias_gerais.png');
+                    }
+                }, 500); // 500ms de atraso
+            }, 500); // 500ms de atraso
+
+            downloadReportButton.disabled = false;
             downloadReportButton.textContent = 'Baixar Relatório';
         }
 
-        initializeCharts();
-        startButton.addEventListener('click', startTest);
+
+        // --- Gerenciamento de Modos ---
+        function setMode(mode) {
+            currentMode = mode;
+            if (mode === 'normal') {
+                normalModeBtn.classList.add('active');
+                mappingModeBtn.classList.remove('active');
+                normalTestSection.style.display = 'block';
+                mappingControls.style.display = 'none';
+                startButton.style.display = 'block'; 
+                downloadReportButton.style.display = 'none'; 
+                resultsSummaryDiv.innerHTML = ''; 
+
+                numGeneralCyclesSelect.disabled = false;
+                numUniqueCyclesSelect.disabled = false;
+
+                // Garante que ambos os gráficos estejam visíveis no modo normal
+                document.getElementById('chartContainer').style.display = 'block';
+                document.getElementById('generalCyclesChartContainer').style.display = 'block';
+
+
+            } else { // mapping mode
+                normalModeBtn.classList.remove('active');
+                mappingModeBtn.classList.add('active');
+                normalTestSection.style.display = 'none';
+                mappingControls.style.display = 'block';
+                startButton.style.display = 'none'; 
+                downloadReportButton.style.display = 'none'; 
+                resultsSummaryDiv.innerHTML = ''; 
+
+                // No modo mapeamento, exibe ambos os gráficos para feedback visual durante o teste.
+                // O relatório em PDF será o que define a exibição final.
+                document.getElementById('chartContainer').style.display = 'block';
+                document.getElementById('generalCyclesChartContainer').style.display = 'block'; 
+
+
+                startMappingFlow();
+            }
+            // Reinicializa gráficos sempre que o modo muda para limpar dados anteriores
+            initializeCharts(); 
+        }
+
+        // --- Event Listeners ---
+        normalModeBtn.addEventListener('click', () => setMode('normal'));
+        mappingModeBtn.addEventListener('click', () => setMode('mapping'));
+        startButton.addEventListener('click', startNormalTest); 
+        startMappingTestBtn.addEventListener('click', performRoomTest); 
+        finishMappingBtn.addEventListener('click', finalizeMappingTest); 
         downloadReportButton.addEventListener('click', generatePdfReport);
+
+        // Inicializa no modo normal ao carregar
+        setMode('normal');
+        initializeCharts();
     </script>
 </body>
 </html>
