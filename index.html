@@ -26,8 +26,11 @@
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             text-align: center;
             width: 100%;
-            max-width: 800px;
+            max-width: 800px; /* Max-width para mobile */
             box-sizing: border-box;
+            display: flex; /* Flex para alinhar título e main-content-wrapper */
+            flex-direction: column;
+            align-items: center;
         }
         h1 {
             color: #333;
@@ -102,7 +105,7 @@
         #chartContainer, #generalCyclesChartContainer {
             margin-top: 40px;
             position: relative;
-            height: 350px;
+            height: 350px; /* Altura padrão para mobile */
             width: 100%;
         }
         #chartContainer h2, #generalCyclesChartContainer h2 {
@@ -154,6 +157,24 @@
             margin-bottom: 10px;
         }
 
+        /* Novo wrapper para as colunas de desktop */
+        .main-content-wrapper {
+            width: 100%;
+            display: flex;
+            flex-direction: column; /* Padrão para mobile: colunas empilhadas */
+            align-items: center; /* Centraliza conteúdo em mobile */
+            flex-grow: 1; /* Permite que cresça e ocupe espaço disponível */
+        }
+
+        .controls-column, .charts-column {
+            width: 100%; /* Padrão para mobile: largura total */
+            padding: 15px; /* Adiciona padding para ambos */
+            box-sizing: border-box;
+        }
+        .charts-column {
+            overflow-y: visible; /* Padrão para mobile */
+        }
+
         @media (min-width: 600px) {
             .controls {
                 flex-direction: row;
@@ -193,6 +214,113 @@
                 margin-bottom: 10px;
             }
         }
+
+        /* Desktop Styles (a partir de 992px) */
+        @media (min-width: 992px) {
+            body {
+                padding: 0; /* Remove padding do body para usar 100% da tela */
+            }
+            .container {
+                width: 90%; /* Ajuste a largura total do container */
+                max-width: 1400px; /* Aumenta o max-width para telas maiores */
+                height: 90vh; /* Ocupa a maior parte da altura da viewport */
+                padding: 0; /* Remove padding direto do container */
+                flex-direction: column; /* Mantém o título no topo */
+                overflow: hidden; /* Garante que o container principal não tenha scroll */
+            }
+            h1 {
+                margin-top: 20px;
+                margin-bottom: 20px;
+            }
+            .mode-selection {
+                width: 100%;
+                max-width: none;
+                justify-content: center;
+                display: flex;
+            }
+            .main-content-wrapper {
+                flex-direction: row; /* Layout lado a lado para desktop */
+                height: calc(100% - 120px); /* Ocupa o resto da altura do container (ajuste 120px conforme altura do título/modos) */
+                align-items: flex-start; /* Alinha o conteúdo ao topo das colunas */
+            }
+
+            .controls-column {
+                width: 30%;
+                height: 100%; /* Ocupa a altura total do main-content-wrapper */
+                overflow-y: auto; /* Adiciona scroll se o conteúdo exceder */
+                padding: 30px 20px; /* Ajusta padding para desktop */
+                border-right: 1px solid #eee; /* Linha divisória */
+                text-align: left; /* Alinha texto dos controles à esquerda */
+                display: flex; /* Flex para organizar conteúdo interno */
+                flex-direction: column;
+                align-items: center; /* Centraliza botões e selects */
+            }
+
+            .charts-column {
+                width: 70%;
+                height: 100%; /* Ocupa a altura total do main-content-wrapper */
+                overflow-y: auto; /* Adiciona scroll se o conteúdo exceder */
+                padding: 30px; /* Ajusta padding para desktop */
+                text-align: center; /* Centraliza gráficos e resultados */
+            }
+
+            /* Ajustes para elementos dentro da coluna de gráficos para melhor ajuste */
+            #progress {
+                margin-top: 25px;
+                margin-bottom: 25px;
+            }
+
+            #chartContainer, #generalCyclesChartContainer {
+                height: auto; /* Permite que o Chart.js defina sua altura responsivamente */
+                max-height: 40vh; /* Garante que não cresçam excessivamente em telas muito grandes */
+                margin-top: 30px; /* Aumenta o espaço acima dos gráficos */
+                margin-bottom: 30px; /* Aumenta o espaço abaixo dos gráficos */
+            }
+
+            #chartContainer h2, #generalCyclesChartContainer h2 {
+                margin-bottom: 25px; /* AUMENTADO: Mais espaço abaixo do título do gráfico */
+                margin-top: 0; /* Garante que não haja margem superior extra aqui */
+            }
+
+            #resultsSummary {
+                margin-top: 30px;
+                padding-top: 20px;
+            }
+            #downloadReportButton {
+                margin-top: 30px; /* Aumenta o espaço acima do botão */
+            }
+
+            /* Ajustes para elementos dentro da coluna de controles */
+            .controls {
+                flex-direction: column; /* Mantém os grupos de select em coluna dentro da coluna de 30% */
+                align-items: flex-start; /* Alinha à esquerda dentro da coluna */
+                gap: 15px;
+                width: 100%;
+            }
+            .controls div {
+                width: 100%; /* Faz os divs de select preencherem a largura da coluna */
+                max-width: none;
+            }
+            button {
+                max-width: 90%; /* Faz os botões preencherem a largura da coluna */
+                margin-left: auto;
+                margin-right: auto;
+                display: block;
+            }
+            #mappingControls {
+                width: 100%;
+                max-width: none;
+                text-align: center; /* Centraliza o texto e input */
+            }
+            #roomInputGroup {
+                width: 100%;
+                max-width: none;
+                text-align: left; /* Alinha o label/input à esquerda */
+            }
+            #roomInputGroup input {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
@@ -204,55 +332,61 @@
             <button id="mappingModeBtn">Mapear Casa</button>
         </div>
 
-        <div id="normalTestSection">
-            <div class="controls">
-                <div>
-                    <label for="numGeneralCycles">Número de Rodadas Gerais:</label>
-                    <select id="numGeneralCycles">
-                        <option value="1" selected>1 rodada</option>
-                        <option value="2">2 rodadas</option>
-                        <option value="3">3 rodadas</option>
-                        <option value="5">5 rodadas</option>
-                        <option value="10">10 rodadas</option>
-                    </select>
+        <div class="main-content-wrapper">
+            <div class="controls-column">
+                <div id="normalTestSection">
+                    <div class="controls">
+                        <div>
+                            <label for="numGeneralCycles">Número de Rodadas Gerais:</label>
+                            <select id="numGeneralCycles">
+                                <option value="1" selected>1 rodada</option>
+                                <option value="2">2 rodadas</option>
+                                <option value="3">3 rodadas</option>
+                                <option value="5">5 rodadas</option>
+                                <option value="10">10 rodadas</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="numUniqueCycles">Downloads por Rodada:</label>
+                            <select id="numUniqueCycles">
+                                <option value="5">5 downloads</option>
+                                <option value="10" selected>10 downloads</option>
+                                <option value="20">20 downloads</option>
+                                <option value="50">50 downloads</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button id="startButton">Iniciar Teste</button>
                 </div>
-                <div>
-                    <label for="numUniqueCycles">Downloads por Rodada:</label>
-                    <select id="numUniqueCycles">
-                        <option value="5">5 downloads</option>
-                        <option value="10" selected>10 downloads</option>
-                        <option value="20">20 downloads</option>
-                        <option value="50">50 downloads</option>
-                    </select>
+
+                <div id="mappingControls" style="display: none;">
+                    <p id="mappingProgress">Para iniciar o mapeamento, digite o nome do cômodo (ex: "Roteador") e clique em 'Realizar Teste neste Cômodo'.</p>
+                    <div id="roomInputGroup">
+                        <label for="currentRoom">Nome do Cômodo:</label>
+                        <input type="text" id="currentRoom" placeholder="Ex: Sala, Quarto, Cozinha">
+                    </div>
+                    <button id="startMappingTestBtn">Realizar Teste neste Cômodo</button>
+                    <button id="finishMappingBtn" style="background-color: #dc3545; display: none;">Finalizar Mapeamento</button>
                 </div>
             </div>
-            <button id="startButton">Iniciar Teste</button>
-        </div>
 
-        <div id="mappingControls" style="display: none;">
-            <p id="mappingProgress">Para iniciar o mapeamento, digite o nome do cômodo (ex: "Roteador") e clique em 'Realizar Teste neste Cômodo'.</p>
-            <div id="roomInputGroup">
-                <label for="currentRoom">Nome do Cômodo:</label>
-                <input type="text" id="currentRoom" placeholder="Ex: Sala, Quarto, Cozinha">
+            <div class="charts-column">
+                <div id="progress">Progresso: --</div>
+                
+                <div id="chartContainer">
+                    <h2>Velocidade de Cada Download</h2>
+                    <canvas id="speedChart"></canvas>
+                </div>
+
+                <div id="generalCyclesChartContainer">
+                    <h2>Média de Velocidade por Rodada Geral</h2>
+                    <canvas id="generalCyclesChart"></canvas>
+                </div>
+
+                <div id="resultsSummary"></div>
+                <button id="downloadReportButton" style="display: none;">Baixar Relatório</button>
             </div>
-            <button id="startMappingTestBtn">Realizar Teste neste Cômodo</button>
-            <button id="finishMappingBtn" style="background-color: #dc3545; display: none;">Finalizar Mapeamento</button>
         </div>
-
-        <div id="progress">Progresso: --</div>
-        
-        <div id="chartContainer">
-            <h2>Velocidade de Cada Download</h2>
-            <canvas id="speedChart"></canvas>
-        </div>
-
-        <div id="generalCyclesChartContainer">
-            <h2>Média de Velocidade por Rodada Geral</h2>
-            <canvas id="generalCyclesChart"></canvas>
-        </div>
-
-        <div id="resultsSummary"></div>
-        <button id="downloadReportButton" style="display: none;">Baixar Relatório</button>
     </div>
 
     <script>
@@ -555,6 +689,7 @@
             currentRoomInput.value = ''; // Limpa o campo
             currentRoomInput.focus();
             startMappingTestBtn.disabled = false;
+            generalCycleAverageSpeeds = []; // Resetar aqui para acumular médias de cômodos
             testStartTime = performance.now(); // Inicia o timer do mapeamento
         }
 
@@ -576,7 +711,6 @@
 
             // IMPORTANTE: individualDownloadSpeeds precisa ser resetado para o gráfico individual de CADA CÔMODO
             individualDownloadSpeeds = []; 
-            // generalCycleAverageSpeeds NÃO DEVE ser resetado aqui no mapping mode, pois queremos acumular as médias
             
             // Reinicializar apenas o gráfico individual, se necessário, ou garantir que ele limpe seus dados
             individualSpeedChart.data.labels = [];
