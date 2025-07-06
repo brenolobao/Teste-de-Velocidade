@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,66 +9,157 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background-color: #f4f4f4;
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+
+        * {
             margin: 0;
-            padding: 20px;
+            padding: 0;
             box-sizing: border-box;
         }
+
+        body {
+            height: 100vh;
+            display: grid;
+            place-items: center;
+            background-color: #EEEEEE;
+            font-family: 'Roboto', sans-serif;
+            color: #434242;
+            overflow-y: auto;
+        }
+
         .container {
-            background-color: #fff;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            text-align: center;
             width: 100%;
-            max-width: 800px; /* Max-width para mobile */
-            box-sizing: border-box;
-            display: flex; /* Flex para alinhar título e main-content-wrapper */
-            flex-direction: column;
+            height: 100%;
+            background-color: white;
+            border-radius: 20px;
+            padding: 15px;
+            display: flex;
             align-items: center;
+            flex-direction: column;
+            justify-content: flex-start;
+            font-size: 1.2em;
+            overflow-y: auto;
         }
+
+        .header-area {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+            flex-wrap: wrap;
+        }
+
         h1 {
             color: #333;
-            margin-bottom: 30px;
+            margin: 0;
+            padding: 0 10px;
+            text-align: left;
+            flex-grow: 1;
+            font-size: 1.8em;
         }
+
+        h2 {
+            margin-bottom: 20px;
+            color: #434242;
+            font-size: 1.3em;
+        }
+
+        h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
         .mode-selection {
-            margin-bottom: 25px;
+            margin: 0;
+            display: flex;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 0 10px;
+            flex-shrink: 0;
         }
+
         .mode-selection button {
-            background-color: #6c757d; /* Cinza para botões de modo */
-            margin: 0 10px;
-            padding: 10px 20px;
-            font-size: 1em;
-            max-width: 200px;
+            background-color: #6c757d;
+            color: white;
+            padding: 6px 12px;
+            font-size: 0.85em;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            flex-shrink: 0;
         }
+
         .mode-selection button.active {
-            background-color: #007bff; /* Azul para o modo ativo */
+            background-color: #007bff;
         }
+
+        .mode-selection button:hover {
+            background-color: #5a6268;
+        }
+
+        .box {
+            width: 90%;
+            height: calc(100% - 80px);
+            margin-bottom: 0;
+            margin-top: 15px;
+            border: 1px solid #E4E4E4;
+            border-radius: 15px;
+            display: flex;
+            overflow: hidden;
+            flex-grow: 1;
+        }
+
+        .innerBox1 {
+            height: 100%;
+            width: 30%;
+            border-right: 1px solid #E4E4E4;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            color: #434242;
+            overflow-y: auto;
+            align-items: center;
+        }
+
+        .innerBox2 {
+            height: 100%;
+            width: 70%;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            color: #434242;
+            overflow-y: auto;
+            text-align: center;
+        }
+
         .controls {
             margin-bottom: 20px;
             display: flex;
             flex-direction: column;
-            align-items: center;
+            align-items: flex-start;
             gap: 20px;
-        }
-        .controls div {
             width: 100%;
             max-width: 300px;
+            margin: 0 auto;
+        }
+
+        .controls div {
+            width: 100%;
             text-align: left;
         }
+
         .controls label {
             font-size: 1.1em;
             color: #555;
             display: block;
             margin-bottom: 8px;
         }
-        .controls select, .controls input[type="text"] {
+
+        .controls select,
+        .controls input[type="text"] {
             padding: 10px;
             border-radius: 5px;
             border: 1px solid #ddd;
@@ -75,6 +167,7 @@
             width: 100%;
             box-sizing: border-box;
         }
+
         button {
             background-color: #007bff;
             color: white;
@@ -87,14 +180,20 @@
             transition: background-color 0.3s ease;
             width: 100%;
             max-width: 280px;
+            margin-left: auto;
+            margin-right: auto;
+            display: block;
         }
+
         button:hover {
             background-color: #0056b3;
         }
+
         button:disabled {
             background-color: #cccccc;
             cursor: not-allowed;
         }
+
         #progress {
             margin-top: 20px;
             margin-bottom: 20px;
@@ -102,239 +201,372 @@
             color: #444;
             min-height: 1.5em;
         }
-        #chartContainer, #generalCyclesChartContainer {
+
+        #chartContainer,
+        #generalCyclesChartContainer {
             margin-top: 40px;
             position: relative;
-            height: 350px; /* Altura padrão para mobile */
+            height: 350px;
             width: 100%;
         }
-        #chartContainer h2, #generalCyclesChartContainer h2 {
+
+        #chartContainer h2,
+        #generalCyclesChartContainer h2 {
             margin-bottom: 15px;
             color: #333;
             font-size: 1.3em;
         }
+
         #resultsSummary {
             margin-top: 40px;
             padding-top: 20px;
             border-top: 1px solid #eee;
             font-size: 1.2em;
             color: #333;
+            text-align: left;
+            width: 100%;
         }
-        #resultsSummary h2, #resultsSummary h3 {
+
+        #resultsSummary h2,
+        #resultsSummary h3 {
             margin-bottom: 15px;
             color: #333;
+            text-align: center;
         }
+
         #resultsSummary p {
             margin: 10px 0;
         }
+
         #resultsSummary strong {
             color: #007bff;
         }
+
         #downloadReportButton {
             background-color: #28a745;
             margin-top: 30px;
             display: none;
         }
+
         #downloadReportButton:hover {
             background-color: #218838;
         }
-        /* Mapeamento Específico */
+
         #mappingControls {
             margin-top: 20px;
             padding: 15px;
             border: 1px dashed #ccc;
             border-radius: 8px;
             background-color: #f9f9f9;
-            display: none; /* Escondido por padrão */
+            display: none;
+            width: 100%;
+            max-width: 300px;
+            text-align: center;
         }
+
         #roomInputGroup {
             margin-top: 15px;
             margin-bottom: 15px;
+            width: 100%;
+            text-align: left;
         }
+
         #mappingProgress {
             font-size: 1.1em;
             color: #666;
             margin-bottom: 10px;
         }
 
-        /* Novo wrapper para as colunas de desktop */
-        .main-content-wrapper {
-            width: 100%;
-            display: flex;
-            flex-direction: column; /* Padrão para mobile: colunas empilhadas */
-            align-items: center; /* Centraliza conteúdo em mobile */
-            flex-grow: 1; /* Permite que cresça e ocupe espaço disponível */
-        }
+        @media (max-width: 768px) {
+            body {
+                height: auto;
+                overflow-y: auto;
+            }
 
-        .controls-column, .charts-column {
-            width: 100%; /* Padrão para mobile: largura total */
-            padding: 15px; /* Adiciona padding para ambos */
-            box-sizing: border-box;
-        }
-        .charts-column {
-            overflow-y: visible; /* Padrão para mobile */
-        }
+            .container {
+                width: 100%;
+                height: 100%;
+                border-radius: 0;
+                padding: 10px;
+                overflow-y: auto;
+                justify-content: flex-start;
+            }
 
-        @media (min-width: 600px) {
-            .controls {
+            .header-area {
+                flex-direction: column;
+                align-items: center;
+                padding: 5px 0;
+            }
+
+            h1 {
+                font-size: 1.3em;
+                margin-bottom: 12px;
+                padding: 0;
+                text-align: center;
+            }
+
+            .mode-selection {
                 flex-direction: row;
                 justify-content: center;
-                flex-wrap: wrap;
-                gap: 30px;
+                align-items: center;
+                gap: 5px;
+                padding: 0;
+                width: 100%;
+                margin-top: 10px;
             }
-            .controls div {
+
+            .mode-selection button {
                 width: auto;
-                flex: none;
-                min-width: 220px;
+                max-width: 48%;
+                font-size: 0.75em;
+                padding: 4px 8px;
             }
-        }
-        @media (max-width: 599px) {
-            .container {
-                padding: 25px 15px;
+
+            .box {
+                flex-direction: column;
+                height: auto;
+                width: 95%;
+                margin-bottom: 15px;
+                margin-top: 15px;
+                overflow: visible;
             }
-            .controls select,
-            button {
-                max-width: none;
+
+            .innerBox1,
+            .innerBox2 {
+                width: 100%;
+                border-right: none;
+                padding: 15px;
+                overflow-y: visible;
+                align-items: center;
             }
-            #chartContainer, #generalCyclesChartContainer {
-                height: 280px;
-                margin-top: 30px;
+
+            .innerBox1 {
+                border-bottom: 1px solid #E4E4E4;
             }
-            #chartContainer h2, #generalCyclesChartContainer h2 {
+
+            h2 {
+                margin-bottom: 10px;
                 font-size: 1.2em;
             }
-            #resultsSummary {
+
+            .controls {
+                max-width: none;
+                align-items: center;
+            }
+
+            .controls div {
+                width: 90%;
+                text-align: center;
+            }
+
+            .controls label {
+                text-align: center;
+            }
+
+            .controls select,
+            .controls input[type="text"] {
+                max-width: 90%;
+                margin: 0 auto;
+            }
+
+            button {
+                max-width: 90%;
+            }
+
+            #chartContainer {
+                height: 280px;
                 margin-top: 30px;
+                margin-bottom: 30px;
             }
-            #resultsSummary h2, #resultsSummary h3 {
-                font-size: 1.1em;
+
+            #generalCyclesChartContainer {
+                height: 280px;
+                margin-top: 50px;
             }
-            .mode-selection button {
-                width: 100%;
-                margin-bottom: 10px;
+
+            #resultsSummary {
+                text-align: center;
+            }
+
+            #resultsSummary h2,
+            #resultsSummary h3 {
+                text-align: center;
+            }
+
+            #mappingControls {
+                max-width: 90%;
+            }
+
+            #roomInputGroup {
+                text-align: center;
+            }
+
+            #roomInputGroup input {
+                max-width: 90%;
             }
         }
 
-        /* Desktop Styles (a partir de 992px) */
+        @media (min-width: 769px) and (max-width: 991px) {
+
+            h1 {
+                font-size: 1.6em;
+            }
+
+            .mode-selection button {
+                padding: 8px 15px;
+                font-size: 0.9em;
+            }
+        }
+
         @media (min-width: 992px) {
             body {
-                padding: 0; /* Remove padding do body para usar 100% da tela */
+                padding: 0;
             }
+
             .container {
-                width: 90%; /* Ajuste a largura total do container */
-                max-width: 1400px; /* Aumenta o max-width para telas maiores */
-                height: 90vh; /* Ocupa a maior parte da altura da viewport */
-                padding: 0; /* Remove padding direto do container */
-                flex-direction: column; /* Mantém o título no topo */
-                overflow: hidden; /* Garante que o container principal não tenha scroll */
+                width: 100%;
+                max-width: 1400px;
+                height: 100%;
+                padding: 0;
+                flex-direction: column;
+                overflow: hidden;
             }
+
+            .header-area {
+                padding: 20px 30px 10px 30px;
+                flex-wrap: nowrap;
+                justify-content: flex-start;
+                align-items: baseline;
+            }
+
             h1 {
-                margin-top: 20px;
-                margin-bottom: 20px;
+                font-size: 1.8em;
+                flex-grow: 1;
+                white-space: nowrap;
+                margin-right: 20px;
             }
+
             .mode-selection {
+                flex-wrap: nowrap;
+                padding-left: 0;
+                gap: 10px;
+                margin-top: 0;
+                flex-shrink: 0;
+            }
+
+            .mode-selection button {
+                max-width: 175px;
+                font-size: 1em;
+                padding: 10px 20px;
+            }
+
+            .box {
+                flex-direction: row;
+                height: calc(100% - 100px);
+                margin-top: 10px;
+                width: 95%;
+                max-width: 1200px;
+            }
+
+            .innerBox1 {
+                width: 30%;
+                border-right: 1px solid #E4E4E4;
+                border-bottom: none;
+                padding: 30px 20px;
+                align-items: center;
+                justify-content: flex-start;
+            }
+
+            .innerBox2 {
+                width: 70%;
+                padding: 30px;
+                text-align: center;
+                justify-content: flex-start;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
                 width: 100%;
                 max-width: none;
-                justify-content: center;
-                display: flex;
-            }
-            .main-content-wrapper {
-                flex-direction: row; /* Layout lado a lado para desktop */
-                height: calc(100% - 120px); /* Ocupa o resto da altura do container (ajuste 120px conforme altura do título/modos) */
-                align-items: flex-start; /* Alinha o conteúdo ao topo das colunas */
             }
 
-            .controls-column {
-                width: 30%;
-                height: 100%; /* Ocupa a altura total do main-content-wrapper */
-                overflow-y: auto; /* Adiciona scroll se o conteúdo exceder */
-                padding: 30px 20px; /* Ajusta padding para desktop */
-                border-right: 1px solid #eee; /* Linha divisória */
-                text-align: left; /* Alinha texto dos controles à esquerda */
-                display: flex; /* Flex para organizar conteúdo interno */
-                flex-direction: column;
-                align-items: center; /* Centraliza botões e selects */
+            .controls div {
+                width: 100%;
+                text-align: left;
             }
 
-            .charts-column {
-                width: 70%;
-                height: 100%; /* Ocupa a altura total do main-content-wrapper */
-                overflow-y: auto; /* Adiciona scroll se o conteúdo exceder */
-                padding: 30px; /* Ajusta padding para desktop */
-                text-align: center; /* Centraliza gráficos e resultados */
+            .controls label {
+                text-align: left;
             }
 
-            /* Ajustes para elementos dentro da coluna de gráficos para melhor ajuste */
-            #progress {
-                margin-top: 25px;
+            .controls select,
+            .controls input[type="text"] {
+                max-width: none;
+                margin: 0;
+            }
+
+            button {
+                max-width: 90%;
+                margin-top: 30px;
+            }
+
+            #chartContainer,
+            #generalCyclesChartContainer {
+                height: auto;
+                max-height: 40vh;
+                margin-top: 30px;
+                margin-bottom: 30px;
+            }
+
+            #chartContainer h2,
+            #generalCyclesChartContainer h2 {
                 margin-bottom: 25px;
-            }
-
-            #chartContainer, #generalCyclesChartContainer {
-                height: auto; /* Permite que o Chart.js defina sua altura responsivamente */
-                max-height: 40vh; /* Garante que não cresçam excessivamente em telas muito grandes */
-                margin-top: 30px; /* Aumenta o espaço acima dos gráficos */
-                margin-bottom: 30px; /* Aumenta o espaço abaixo dos gráficos */
-            }
-
-            #chartContainer h2, #generalCyclesChartContainer h2 {
-                margin-bottom: 25px; /* AUMENTADO: Mais espaço abaixo do título do gráfico */
-                margin-top: 0; /* Garante que não haja margem superior extra aqui */
+                margin-top: 0;
             }
 
             #resultsSummary {
                 margin-top: 30px;
                 padding-top: 20px;
-            }
-            #downloadReportButton {
-                margin-top: 30px; /* Aumenta o espaço acima do botão */
+                text-align: center;
             }
 
-            /* Ajustes para elementos dentro da coluna de controles */
-            .controls {
-                flex-direction: column; /* Mantém os grupos de select em coluna dentro da coluna de 30% */
-                align-items: flex-start; /* Alinha à esquerda dentro da coluna */
-                gap: 15px;
-                width: 100%;
+            #resultsSummary h2,
+            #resultsSummary h3 {
+                text-align: center;
             }
-            .controls div {
-                width: 100%; /* Faz os divs de select preencherem a largura da coluna */
-                max-width: none;
+
+            #downloadReportButton {
+                margin-top: 30px;
             }
-            button {
-                max-width: 90%; /* Faz os botões preencherem a largura da coluna */
-                margin-left: auto;
-                margin-right: auto;
-                display: block;
-            }
+
             #mappingControls {
-                width: 100%;
                 max-width: none;
-                text-align: center; /* Centraliza o texto e input */
+                text-align: center;
             }
+
             #roomInputGroup {
-                width: 100%;
-                max-width: none;
-                text-align: left; /* Alinha o label/input à esquerda */
-            }
-            #roomInputGroup input {
-                width: 100%;
+                text-align: left;
             }
         }
     </style>
 </head>
+
 <body>
     <div class="container">
-        <h1>Medidor de Velocidade da Internet</h1>
-
-        <div class="mode-selection">
-            <button id="normalModeBtn" class="active">Teste Normal</button>
-            <button id="mappingModeBtn">Mapear Casa</button>
+        <div class="header-area">
+            <h1>Medidor de Velocidade da Internet</h1>
+            <div class="mode-selection">
+                <button id="normalModeBtn" class="active">Teste Normal</button>
+                <button id="mappingModeBtn">Mapear Casa</button>
+            </div>
         </div>
 
-        <div class="main-content-wrapper">
-            <div class="controls-column">
+        <div class="box">
+            <div class="innerBox1">
                 <div id="normalTestSection">
+                    <h2>Controles</h2>
                     <div class="controls">
                         <div>
                             <label for="numGeneralCycles">Número de Rodadas Gerais:</label>
@@ -360,19 +592,23 @@
                 </div>
 
                 <div id="mappingControls" style="display: none;">
-                    <p id="mappingProgress">Para iniciar o mapeamento, digite o nome do cômodo (ex: "Roteador") e clique em 'Realizar Teste neste Cômodo'.</p>
+                    <h2>Controles de Mapeamento</h2>
+                    <p id="mappingProgress">Para iniciar o mapeamento, digite o nome do cômodo (ex: "Roteador") e clique
+                        em 'Realizar Teste neste Cômodo'.</p>
                     <div id="roomInputGroup">
                         <label for="currentRoom">Nome do Cômodo:</label>
                         <input type="text" id="currentRoom" placeholder="Ex: Sala, Quarto, Cozinha">
                     </div>
                     <button id="startMappingTestBtn">Realizar Teste neste Cômodo</button>
-                    <button id="finishMappingBtn" style="background-color: #dc3545; display: none;">Finalizar Mapeamento</button>
+                    <button id="finishMappingBtn" style="background-color: #dc3545; display: none;">Finalizar
+                        Mapeamento</button>
                 </div>
             </div>
 
-            <div class="charts-column">
+            <div class="innerBox2">
+                <h2>Gráficos</h2>
                 <div id="progress">Progresso: --</div>
-                
+
                 <div id="chartContainer">
                     <h2>Velocidade de Cada Download</h2>
                     <canvas id="speedChart"></canvas>
@@ -399,7 +635,6 @@
         const generalChartCanvas = document.getElementById('generalCyclesChart');
         const downloadReportButton = document.getElementById('downloadReportButton');
 
-        // Novos elementos para o mapeamento
         const normalModeBtn = document.getElementById('normalModeBtn');
         const mappingModeBtn = document.getElementById('mappingModeBtn');
         const normalTestSection = document.getElementById('normalTestSection');
@@ -409,7 +644,6 @@
         const startMappingTestBtn = document.getElementById('startMappingTestBtn');
         const finishMappingBtn = document.getElementById('finishMappingBtn');
 
-        // *** URL ATUALIZADA E CORRETA ***
         const fileUrl = 'https://brenolobao.github.io/Teste-de-Velocidade/15MBtest.zip';
         const fileSizeInBytes = 15728640;
 
@@ -421,10 +655,9 @@
         let generalCycleSpeedChart;
         let testStartTime;
         let finalReportData = {};
-        
-        // Variáveis para o modo de mapeamento
-        let currentMode = 'normal'; // 'normal' ou 'mapping'
-        let mappingResults = []; // [{ room: 'Sala', speed: 100, individualSpeeds: [20, 30, 25] }]
+
+        let currentMode = 'normal';
+        let mappingResults = [];
 
         function initializeCharts() {
             if (individualSpeedChart) {
@@ -467,7 +700,7 @@
                     plugins: {
                         tooltip: {
                             callbacks: {
-                                label: function(context) {
+                                label: function (context) {
                                     return `${context.dataset.label}: ${context.raw.toFixed(2)} Mbps`;
                                 }
                             }
@@ -516,7 +749,7 @@
                     plugins: {
                         tooltip: {
                             callbacks: {
-                                label: function(context) {
+                                label: function (context) {
                                     return `${context.dataset.label}: ${context.raw.toFixed(2)} Mbps`;
                                 }
                             }
@@ -530,7 +763,7 @@
             try {
                 const startTime = performance.now();
                 const response = await fetch(fileUrl + '?cacheBuster=' + new Date().getTime());
-                
+
                 if (!response.ok) {
                     throw new Error(`Erro HTTP: ${response.status} ${response.statusText}`);
                 }
@@ -539,9 +772,9 @@
                 const endTime = performance.now();
 
                 const downloadTimeMs = endTime - startTime;
-                
-                const speedBps = (downloadTimeMs > 0) ? (fileSizeInBytes / (downloadTimeMs / 1000)) : (fileSizeInBytes * 1000); 
-                
+
+                const speedBps = (downloadTimeMs > 0) ? (fileSizeInBytes / (downloadTimeMs / 1000)) : (fileSizeInBytes * 1000);
+
                 return speedBps;
             } catch (error) {
                 console.error("Erro ao medir a velocidade:", error);
@@ -555,7 +788,7 @@
             numUniqueCyclesSelect.disabled = true;
             downloadReportButton.style.display = 'none';
             resultsSummaryDiv.innerHTML = '';
-            
+
             numGeneralCycles = parseInt(numGeneralCyclesSelect.value);
             numUniqueCycles = parseInt(numUniqueCyclesSelect.value);
             individualDownloadSpeeds = [];
@@ -564,7 +797,7 @@
             finalReportData = {};
 
             progressDiv.textContent = `Preparando teste...`;
-            
+
             initializeCharts();
             let totalDownloadsCompleted = 0;
 
@@ -573,7 +806,7 @@
                 for (let u = 0; u < numUniqueCycles; u++) {
                     totalDownloadsCompleted++;
                     progressDiv.textContent = `Rodada ${g + 1}/${numGeneralCycles} - Download ${u + 1}/${numUniqueCycles} (${totalDownloadsCompleted} total)`;
-                    
+
                     const currentSpeedBps = await measureSpeed();
                     individualDownloadSpeeds.push(currentSpeedBps);
                     currentGeneralCycleSpeeds.push(currentSpeedBps);
@@ -603,7 +836,7 @@
                     }
                 }
             }
-            
+
             finalizeNormalTest();
         }
 
@@ -662,35 +895,31 @@
             finalReportData.testDuration = totalTestTimeSeconds;
             finalReportData.numGeneralCycles = numGeneralCycles;
             finalReportData.numUniqueCycles = numUniqueCycles;
-            finalReportData.isMappingTest = false; // Indica que não é teste de mapeamento
+            finalReportData.isMappingTest = false;
 
             downloadReportButton.style.display = 'block';
         }
 
-        // --- Funções de Mapeamento (Sem localização) ---
         async function startMappingFlow() {
-            mappingResults = []; // Resetar resultados de mapeamento
-            finishMappingBtn.style.display = 'none'; // Esconder botão de finalizar
+            mappingResults = [];
+            finishMappingBtn.style.display = 'none';
             resultsSummaryDiv.innerHTML = '';
-            
-            // Reabilita os campos de controle caso o usuário tenha clicado em "iniciar teste" anteriormente
-            numGeneralCyclesSelect.disabled = false; 
+
+            numGeneralCyclesSelect.disabled = false;
             numUniqueCyclesSelect.disabled = false;
 
-            // Define o número de downloads por rodada para mapeamento (ex: 5 downloads por cômodo)
-            numGeneralCyclesSelect.value = "1"; // Uma rodada geral por cômodo
-            numUniqueCyclesSelect.value = "5"; // 5 downloads por cômodo (pode ser ajustado)
-            
-            // Desabilita os seletores no modo mapeamento para evitar que o usuário altere
-            numGeneralCyclesSelect.disabled = true; 
+            numGeneralCyclesSelect.value = "1";
+            numUniqueCyclesSelect.value = "5";
+
+            numGeneralCyclesSelect.disabled = true;
             numUniqueCyclesSelect.disabled = true;
 
             mappingProgress.textContent = "Para iniciar o mapeamento, digite o nome do cômodo (ex: 'Roteador') e clique em 'Realizar Teste neste Cômodo'.";
-            currentRoomInput.value = ''; // Limpa o campo
+            currentRoomInput.value = '';
             currentRoomInput.focus();
             startMappingTestBtn.disabled = false;
-            generalCycleAverageSpeeds = []; // Resetar aqui para acumular médias de cômodos
-            testStartTime = performance.now(); // Inicia o timer do mapeamento
+            generalCycleAverageSpeeds = [];
+            testStartTime = performance.now();
         }
 
         async function performRoomTest() {
@@ -704,15 +933,12 @@
             startMappingTestBtn.disabled = true;
             finishMappingBtn.disabled = true;
             progressDiv.textContent = `Realizando teste de velocidade em "${roomName}"...`;
-            
-            // Realiza o teste de velocidade (apenas 1 rodada geral com os downloads definidos)
-            numGeneralCycles = 1; // Sempre 1 rodada para cada cômodo
-            numUniqueCycles = parseInt(numUniqueCyclesSelect.value); // Usa o valor selecionado
 
-            // IMPORTANTE: individualDownloadSpeeds precisa ser resetado para o gráfico individual de CADA CÔMODO
-            individualDownloadSpeeds = []; 
-            
-            // Reinicializar apenas o gráfico individual, se necessário, ou garantir que ele limpe seus dados
+            numGeneralCycles = 1;
+            numUniqueCycles = parseInt(numUniqueCyclesSelect.value);
+
+            individualDownloadSpeeds = [];
+
             individualSpeedChart.data.labels = [];
             individualSpeedChart.data.datasets[0].data = [];
             individualSpeedChart.update();
@@ -720,20 +946,20 @@
 
             let currentRoomTotalSpeedBps = 0;
             let currentRoomValidDownloads = 0;
-            let currentRoomIndividualSpeedsMbps = []; // Para armazenar as velocidades individuais do cômodo
+            let currentRoomIndividualSpeedsMbps = [];
 
             for (let u = 0; u < numUniqueCycles; u++) {
                 progressDiv.textContent = `Teste em "${roomName}": Download ${u + 1}/${numUniqueCycles}`;
                 const currentSpeedBps = await measureSpeed();
-                
+
                 if (currentSpeedBps > 0) {
                     currentRoomTotalSpeedBps += currentSpeedBps;
                     currentRoomValidDownloads++;
                 }
 
                 const speedMbps = (currentSpeedBps * 8) / (1024 * 1024);
-                currentRoomIndividualSpeedsMbps.push(speedMbps); // Salva para o gráfico do cômodo
-                
+                currentRoomIndividualSpeedsMbps.push(speedMbps);
+
                 individualSpeedChart.data.labels.push(`D ${u + 1} (${roomName})`);
                 individualSpeedChart.data.datasets[0].data.push(speedMbps);
                 individualSpeedChart.update();
@@ -744,8 +970,7 @@
                 const roomAverageSpeedBps = currentRoomTotalSpeedBps / currentRoomValidDownloads;
                 roomAverageSpeedMbps = (roomAverageSpeedBps * 8) / (1024 * 1024);
             }
-            
-            // Atualiza o gráfico geral de ciclos com a média do cômodo atual
+
             generalCycleSpeedChart.data.labels.push(roomName);
             generalCycleSpeedChart.data.datasets[0].data.push(roomAverageSpeedMbps);
             generalCycleSpeedChart.update();
@@ -753,15 +978,15 @@
             mappingResults.push({
                 room: roomName,
                 speed: roomAverageSpeedMbps.toFixed(2),
-                individualSpeeds: currentRoomIndividualSpeedsMbps // Adicionado!
+                individualSpeeds: currentRoomIndividualSpeedsMbps
             });
 
             mappingProgress.textContent = `Teste em "${roomName}" (${roomAverageSpeedMbps.toFixed(2)} Mbps) concluído! Agora, vá para outro cômodo, digite o nome e clique em 'Realizar Teste neste Cômodo', ou clique em 'Finalizar Mapeamento'.`;
-            currentRoomInput.value = ''; // Limpa para o próximo cômodo
+            currentRoomInput.value = '';
             currentRoomInput.focus();
-            
+
             startMappingTestBtn.disabled = false;
-            finishMappingBtn.style.display = 'block'; 
+            finishMappingBtn.style.display = 'block';
             finishMappingBtn.disabled = false;
             progressDiv.textContent = `Teste de cômodo concluído.`;
         }
@@ -779,15 +1004,14 @@
             `;
 
             downloadReportButton.style.display = 'block';
-            downloadReportButton.disabled = false; 
-            
+            downloadReportButton.disabled = false;
+
             mappingProgress.textContent = "Mapeamento finalizado. Você pode baixar o relatório ou iniciar um novo mapeamento.";
             startMappingTestBtn.disabled = false;
-            finishMappingBtn.style.display = 'none'; 
-            currentRoomInput.value = ''; 
+            finishMappingBtn.style.display = 'none';
+            currentRoomInput.value = '';
         }
 
-        // --- Função Auxiliar para Baixar Imagem ---
         function downloadImage(canvas, filename) {
             if (!canvas || !canvas.getContext) {
                 console.error("Canvas inválido para download da imagem.");
@@ -803,7 +1027,6 @@
             document.body.removeChild(link);
         }
 
-        // --- Geração do Relatório PDF e Imagens ---
         async function generatePdfReport() {
             downloadReportButton.disabled = true;
             downloadReportButton.textContent = 'Gerando...';
@@ -843,7 +1066,7 @@
                 yPos += 10;
 
                 for (const result of finalReportData.mappingResults) {
-                    if (yPos + 20 > doc.internal.pageSize.height) { 
+                    if (yPos + 20 > doc.internal.pageSize.height) {
                         doc.addPage();
                         yPos = 20;
                     }
@@ -851,8 +1074,8 @@
                     doc.text(`Cômodo: ${result.room} - Velocidade Média: ${result.speed} Mbps`, margin, yPos);
                     yPos += 8;
                 }
-                
-                yPos += 15; 
+
+                yPos += 15;
             } else {
                 doc.setFontSize(12);
                 doc.text(`Configuração do Teste: ${finalReportData.numGeneralCycles || 'N/A'} Rodadas Gerais, ${finalReportData.numUniqueCycles || 'N/A'} Downloads por Rodada`, margin, yPos);
@@ -878,33 +1101,26 @@
                 }
             }
 
-            // Salva o PDF primeiro
             doc.save("Relatorio_Teste_Velocidade.pdf");
 
-            // Pequeno atraso antes de baixar as imagens para não sobrecarregar o navegador
             setTimeout(() => {
-                // Baixa a imagem do gráfico individual SOMENTE se NÃO FOR um teste de mapeamento
                 if (!finalReportData.isMappingTest) {
                     if (individualSpeedChart) {
                         downloadImage(individualChartCanvas, 'grafico_velocidade_individual.png');
                     }
                 }
 
-                // Pequeno atraso antes de baixar a segunda imagem
                 setTimeout(() => {
-                    // Baixa a imagem do gráfico de médias gerais (sempre, em ambos os modos)
                     if (generalCycleSpeedChart) {
                         downloadImage(generalChartCanvas, 'grafico_medias_gerais.png');
                     }
-                }, 500); // 500ms de atraso
-            }, 500); // 500ms de atraso
+                }, 500);
+            }, 500);
 
             downloadReportButton.disabled = false;
             downloadReportButton.textContent = 'Baixar Relatório';
         }
 
-
-        // --- Gerenciamento de Modos ---
         function setMode(mode) {
             currentMode = mode;
             if (mode === 'normal') {
@@ -912,50 +1128,44 @@
                 mappingModeBtn.classList.remove('active');
                 normalTestSection.style.display = 'block';
                 mappingControls.style.display = 'none';
-                startButton.style.display = 'block'; 
-                downloadReportButton.style.display = 'none'; 
-                resultsSummaryDiv.innerHTML = ''; 
+                startButton.style.display = 'block';
+                downloadReportButton.style.display = 'none';
+                resultsSummaryDiv.innerHTML = '';
 
                 numGeneralCyclesSelect.disabled = false;
                 numUniqueCyclesSelect.disabled = false;
 
-                // Garante que ambos os gráficos estejam visíveis no modo normal
                 document.getElementById('chartContainer').style.display = 'block';
                 document.getElementById('generalCyclesChartContainer').style.display = 'block';
 
 
-            } else { // mapping mode
+            } else {
                 normalModeBtn.classList.remove('active');
                 mappingModeBtn.classList.add('active');
                 normalTestSection.style.display = 'none';
                 mappingControls.style.display = 'block';
-                startButton.style.display = 'none'; 
-                downloadReportButton.style.display = 'none'; 
-                resultsSummaryDiv.innerHTML = ''; 
+                startButton.style.display = 'none';
+                downloadReportButton.style.display = 'none';
+                resultsSummaryDiv.innerHTML = '';
 
-                // No modo mapeamento, exibe ambos os gráficos para feedback visual durante o teste.
-                // O relatório em PDF será o que define a exibição final.
                 document.getElementById('chartContainer').style.display = 'block';
-                document.getElementById('generalCyclesChartContainer').style.display = 'block'; 
-
+                document.getElementById('generalCyclesChartContainer').style.display = 'block';
 
                 startMappingFlow();
             }
-            // Reinicializa gráficos sempre que o modo muda para limpar dados anteriores
-            initializeCharts(); 
+            initializeCharts();
         }
 
-        // --- Event Listeners ---
         normalModeBtn.addEventListener('click', () => setMode('normal'));
         mappingModeBtn.addEventListener('click', () => setMode('mapping'));
-        startButton.addEventListener('click', startNormalTest); 
-        startMappingTestBtn.addEventListener('click', performRoomTest); 
-        finishMappingBtn.addEventListener('click', finalizeMappingTest); 
+        startButton.addEventListener('click', startNormalTest);
+        startMappingTestBtn.addEventListener('click', performRoomTest);
+        finishMappingBtn.addEventListener('click', finalizeMappingTest);
         downloadReportButton.addEventListener('click', generatePdfReport);
 
-        // Inicializa no modo normal ao carregar
         setMode('normal');
         initializeCharts();
     </script>
 </body>
+
 </html>
