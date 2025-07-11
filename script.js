@@ -17,7 +17,7 @@ const currentRoomInput = document.getElementById('currentRoom');
 const startMappingTestBtn = document.getElementById('startMappingTestBtn');
 const finishMappingBtn = document.getElementById('finishMappingBtn');
 
-const fileUrl = 'https://brenolobao.github.io/Teste-de-Velocidade/15MBtest.zip';
+const fileUrl = 'https://brenolobao.github.io/WiMapping/15MBtest.zip';
 const fileSizeInBytes = 15728640;
 
 let numGeneralCycles = 0;
