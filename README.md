@@ -40,18 +40,6 @@ A interface do WiMapping permite dois modos principais de uso:
 
 ---
 
-##  Estrutura do Projeto
-
-```
-📁 WiMapping/
-├── index.html           # Página principal da aplicação
-├── style.css            # Estilos da interface
-├── script.js            # Lógica de teste, gráficos e exportação
-└── logo.jpg             # Logotipo exibido no topo da página
-```
-
----
-
 ##  Como Usar
 
 1. **Abra o arquivo `index.html` em um navegador** ou acesse o [deploy online](https://brenolobao.github.io/WiMapping/).
@@ -62,7 +50,7 @@ A interface do WiMapping permite dois modos principais de uso:
 
 ---
 
-## 📋 Exemplo de Uso
+##  Exemplo de Uso
 
 - **Teste Normal:**  
   Escolha 5 rodadas com 10 downloads cada e clique em “Iniciar Teste”.
