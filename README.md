@@ -7,7 +7,7 @@
 
 ---
 
-## 📸 Visão Geral
+##  Visão Geral
 
 A interface do WiMapping permite dois modos principais de uso:
 
@@ -16,7 +16,7 @@ A interface do WiMapping permite dois modos principais de uso:
 
 ---
 
-## 🚀 Funcionalidades
+##  Funcionalidades
 
 - **Seleção de Modo de Teste:**  
   - `Teste Normal`: Realiza testes com múltiplas rodadas e downloads por rodada.  
@@ -31,7 +31,7 @@ A interface do WiMapping permite dois modos principais de uso:
 
 ---
 
-## 🛠️ Tecnologias Utilizadas
+##  Tecnologias Utilizadas
 
 - **HTML5 / CSS3**
 - **JavaScript**
@@ -40,7 +40,7 @@ A interface do WiMapping permite dois modos principais de uso:
 
 ---
 
-## 📂 Estrutura do Projeto
+##  Estrutura do Projeto
 
 ```
 📁 WiMapping/
@@ -52,7 +52,7 @@ A interface do WiMapping permite dois modos principais de uso:
 
 ---
 
-## 🎮 Como Usar
+##  Como Usar
 
 1. **Abra o arquivo `index.html` em um navegador** ou acesse o [deploy online](https://brenolobao.github.io/WiMapping/).
 2. **Escolha o modo de teste desejado.**
