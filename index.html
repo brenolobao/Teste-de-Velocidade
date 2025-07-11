@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WiMapping</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="container">
+        <div class="header-area">
+            <h1><img src="logo.jpg" alt="" srcset="">
+                <p>Medidor de Velocidade da Internet</p>
+            </h1>
+            <div class="mode-selection">
+                <button id="normalModeBtn" class="active">Teste Normal</button>
+                <button id="mappingModeBtn">Mapear Casa</button>
+            </div>
+        </div>
+
+        <div class="box">
+            <div class="innerBox1">
+                <div id="normalTestSection">
+                    <h2>Controles</h2>
+                    <div class="controls">
+                        <div>
+                            <label for="numGeneralCycles">Número de Rodadas Gerais:</label>
+                            <select id="numGeneralCycles">
+                                <option value="1" selected>1 rodada</option>
+                                <option value="2">2 rodadas</option>
+                                <option value="3">3 rodadas</option>
+                                <option value="5">5 rodadas</option>
+                                <option value="10">10 rodadas</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="numUniqueCycles">Downloads por Rodada:</label>
+                            <select id="numUniqueCycles">
+                                <option value="5">5 downloads</option>
+                                <option value="10" selected>10 downloads</option>
+                                <option value="20">20 downloads</option>
+                                <option value="50">50 downloads</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button id="startButton">Iniciar Teste</button>
+                </div>
+
+                <div id="mappingControls" style="display: none;">
+                    <h2>Controles de Mapeamento</h2>
+                    <p id="mappingProgress">Para iniciar o mapeamento, digite o nome do cômodo (ex: "Roteador") e clique
+                        em 'Realizar Teste neste Cômodo'.</p>
+                    <div id="roomInputGroup">
+                        <label for="currentRoom">Nome do Cômodo:</label>
+                        <input type="text" id="currentRoom" placeholder="Ex: Sala, Quarto, Cozinha">
+                    </div>
+                    <button id="startMappingTestBtn">Realizar Teste neste Cômodo</button>
+                    <button id="finishMappingBtn" style="background-color: #dc3545; display: none;">Finalizar
+                        Mapeamento</button>
+                </div>
+            </div>
+
+            <div class="innerBox2">
+                <h2>Gráficos</h2>
+                <div id="progress">Progresso: --</div>
+
+                <div id="chartContainer">
+                    <h2>Velocidade de Cada Download</h2>
+                    <canvas id="speedChart"></canvas>
+                </div>
+
+                <div id="generalCyclesChartContainer">
+                    <h2>Média de Velocidade por Rodada Geral</h2>
+                    <canvas id="generalCyclesChart"></canvas>
+                </div>
+
+                <div id="resultsSummary"></div>
+                <button id="downloadReportButton" style="display: none;">Baixar Relatório</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
