@@ -1,4 +1,3 @@
-
 const startButton = document.getElementById('startButton');
 const numGeneralCyclesSelect = document.getElementById('numGeneralCycles');
 const numUniqueCyclesSelect = document.getElementById('numUniqueCycles');
@@ -17,8 +16,12 @@ const currentRoomInput = document.getElementById('currentRoom');
 const startMappingTestBtn = document.getElementById('startMappingTestBtn');
 const finishMappingBtn = document.getElementById('finishMappingBtn');
 
-const fileUrl = 'https://brenolobao.github.io/WiMapping/15MBtest.zip';
-const fileSizeInBytes = 15728640;
+const downloadFiles = [
+    { url: 'https://brenolobao.github.io/WiMapping/15MBtest.zip', size: 15728640 },
+    { url: 'https://brenolobao.github.io/WiMapping/5MBtest.zip', size: 5344622 },
+    { url: 'https://brenolobao.github.io/WiMapping/10MBtest.zip', size: 10589104 },
+    { url: 'https://brenolobao.github.io/WiMapping/20MBtest.zip', size: 21071670 }
+];
 
 let numGeneralCycles = 0;
 let numUniqueCycles = 0;
@@ -134,6 +137,9 @@ function initializeCharts() {
 
 async function measureSpeed() {
     try {
+        const randomIndex = Math.floor(Math.random() * downloadFiles.length);
+        const { url: fileUrl, size: fileSizeInBytes } = downloadFiles[randomIndex];
+
         const startTime = performance.now();
         const response = await fetch(fileUrl + '?cacheBuster=' + new Date().getTime());
 
